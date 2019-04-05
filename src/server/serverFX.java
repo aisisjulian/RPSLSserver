@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 
 /*this is aris comment*/
-////
+
 public class serverFX extends Application {
 
     private Server server;
