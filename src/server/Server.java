@@ -13,6 +13,7 @@ public class Server {
 
     private int port;
     private ArrayList<ConnThread> clientThreadList = new ArrayList<>();
+    private ArrayList<String> namesList = new ArrayList<>();
     private HashMap<ConnThread, String> clientThreadMap = new HashMap<>();
     private Consumer<Serializable> callback;
     static int numClients = 0;
@@ -24,6 +25,7 @@ public class Server {
     public Server(int port, Consumer<Serializable> callback) {
         this.callback = callback;
         this.port = port;
+        namesList.add("NAMESLIST");
     }
 
     public int getPort() {
@@ -133,6 +135,7 @@ public class Server {
         private boolean isConnected;
         private int points;
         private String playerID = "";
+        private String screenName;
 
         ConnThread(Socket s){
             this.socket = s;
@@ -172,6 +175,11 @@ public class Server {
 
                     if (data.toString().equals("CONNECTED")) {
                         callback.accept(data);
+                    }
+                    if (data.toString().split(" ")[0].equals("NAME:")){
+                        this.screenName = data.toString().split(" ")[1];
+                        namesList.add(this.screenName);
+                        send(namesList, clientID);
                     }
                     if (data.toString().equals("disconnected")) {
                         if(this.playerID.equals("PLAYER 1")){
