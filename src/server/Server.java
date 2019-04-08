@@ -15,16 +15,11 @@ public class Server {
     private ArrayList<ConnThread> clientThreadList = new ArrayList<>();
     private ArrayList<String> namesList = new ArrayList<>();
     private HashMap<String, ConnThread> clientThreadMap = new HashMap<>();
-    private ArrayList<Game> gameList = new ArrayList<>();
     private HashMap<Integer, Game> gameMap = new HashMap<>();
     private Consumer<Serializable> callback;
 
     static int numClients = 0;
     static int numGames = 0;
-
-    public Server(){
-
-    }
 
     public Server(int port, Consumer<Serializable> callback) {
         this.callback = callback;
@@ -128,13 +123,12 @@ public class Server {
                         send("PLAY-REQUEST: " + screenName, opponent.clientIndex);
                     }
                     if(data.toString().split(" ")[0].equals("ACCEPTED")){
+                        game = new Game(numGames, this);
+                        gameMap.put(game.getGameID(), this.game);
                         game.addPlayer(opponent);
                         isInGame = true;
                         game.startGame();
-                    }
-                    if(data.toString().split(" ")[0].equals("WAIT")){
-                        game = new Game(numGames, this);
-                        gameMap.put(game.getGameID(), this.game);
+                        numGames++;
                     }
 
                     if(data.toString().split(" ")[0].equals("PLAY-REQUEST:")){
@@ -173,6 +167,8 @@ public class Server {
 
                     if(data.toString().equals("quit")){
                         if(isInGame) {
+                            gameMap.remove(game.getGameID());
+                            numGames--;
                             game.playerQuit(this);
                             isInGame = false;
                         }
