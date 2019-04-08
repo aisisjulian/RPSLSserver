@@ -273,7 +273,7 @@ public class Server {
             }
             else if(p2 == playerDisconnected){
                 p2.setConnected(false);
-                send("playerDisconnected", p2);
+                send("playerDisconnected", p1);
             }
             numPlayers--;
         }
@@ -285,7 +285,7 @@ public class Server {
             }
             else if(p2 == playerQuit){
                 p2.setConnected(false);
-                send("opponent quit", p2);
+                send("opponent quit", p1);
             }
             numPlayers--;
         }
