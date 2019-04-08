@@ -14,13 +14,13 @@ public class Server {
     private int port;
     private ArrayList<ConnThread> clientThreadList = new ArrayList<>();
     private ArrayList<String> namesList = new ArrayList<>();
-    private HashMap<ConnThread, String> clientThreadMap = new HashMap<>();
+    private HashMap<String, ConnThread> clientThreadMap = new HashMap<>();
+    private ArrayList<Game> gameList = new ArrayList<>();
+    private HashMap<Integer, Game> gameMap = new HashMap<>();
     private Consumer<Serializable> callback;
+
     static int numClients = 0;
-    private boolean player1Connected = false;
-    private boolean player2Connected = false;
-    private boolean player1IsPlayingAgain = false;
-    private boolean player2IsPlayAgain = false;
+    static int numGames = 0;
 
     public Server(int port, Consumer<Serializable> callback) {
         this.callback = callback;
@@ -57,104 +57,44 @@ public class Server {
         }
     }
 
-    public int findWinner(String p1, String p2){
-        if(p1.equals(p2)){
-            return -1;
-        }
-        else if(p1.equals("rock") && p2.equals("paper")){
-            return 2;
-        }
-        else if(p2.equals("rock") && p1.equals("paper")){
-            return 1;
-        }
-        else if(p1.equals("rock") && p2.equals("scissors")){
-            return 1;
-        }
-        else if(p2.equals("rock") && p1.equals("scissors")){
-            return 2;
-        }
-        else if(p1.equals("rock") && p2.equals("lizard")){
-            return 1;
-        }
-        else if(p2.equals("rock") && p1.equals("lizard")){
-            return 2;
-        }
-        else if(p1.equals("rock") && p2.equals("spock")){
-            return 2;
-        }
-        else if(p2.equals("rock") && p1.equals("spock")){
-            return 1;
-        }
-        else if(p1.equals("paper") && p2.equals("scissors")){
-            return 2;
-        }
-        else if(p2.equals("paper") && p1.equals("scissors")){
-            return 1;
-        }
-        else if(p2.equals("paper") && p1.equals("lizard")){
-            return 1;
-        }
-        else if(p1.equals("paper") && p2.equals("lizard")){
-            return 1;
-        }
-        else if(p2.equals("paper") && p1.equals("spock")){
-            return 2;
-        }
-        else if(p1.equals("paper") && p2.equals("spock")){
-            return 1;
-        }
-        else if(p2.equals("scissors") && p1.equals("lizard")){
-            return 2;
-        }
-        else if(p1.equals("scissors") && p2.equals("lizard")){
-            return 1;
-        }
-        else if(p2.equals("scissors") && p1.equals("spock")){
-            return 1;
-        }
-        else if(p1.equals("scissors") && p2.equals("spock")){
-            return 2;
-        }
-        else if(p2.equals("lizard") && p1.equals("spock")){
-            return 2;
-        }
-        else if(p1.equals("lizard") && p2.equals("spock")){
-            return 1;
-        }
-        else{
-            return -1;
-        }
-    }
+
 
      class ConnThread extends Thread{
-        private ObjectOutputStream out;
+        ObjectOutputStream out;
         private Socket socket;
-        private int clientID;
+        private int clientIndex;
         private String played;
         private boolean hasPlayed;
         private boolean isConnected;
-        private int points;
-        private String playerID = "";
+        private boolean isPlayingAgain;
         private String screenName;
-
+        private boolean isInGame;
+        private ConnThread opponent;
+        private Game game;
+        private ArrayList<ConnThread> waitingList;
         ConnThread(Socket s){
             this.socket = s;
-            this.clientID = numClients;
-            if(!player1Connected){
-                player1Connected = true;
-                playerID = "PLAYER 1";
-                clientThreadMap.put(this, "PLAYER 1");
-            }
-            else if(!player2Connected){
-                player2Connected = true;
-                playerID = "PLAYER 2";
-                clientThreadMap.put(this, "PLAYER 2");
-            }
+            this.clientIndex = numClients;
             setDaemon(true);
             this.isConnected = true;
             this.hasPlayed = false;
-            this.points = 0;
+            this.isPlayingAgain = false;
+            this.isInGame = false;
+            waitingList = new ArrayList<>();
         }
+
+        public void setConnected( boolean c){ this.isConnected = c; }
+        public boolean isConnected(){ return this.isConnected; }
+        public boolean isPlayingAgain(){ return this.isPlayingAgain; }
+        public void setPlayingAgain(boolean p){ this.isPlayingAgain = p; }
+        public int getClientIndex(){ return this.clientIndex; }
+        public boolean hasPlayed(){ return this.hasPlayed; }
+        public String getPlayed(){ return this.played; }
+        public void setHasPlayed(boolean p){ this.hasPlayed = p; }
+        public boolean getIsInGame(){ return this.isInGame; }
+        public void setIsInGame(boolean g){ this.isInGame = g; }
+        public Game getGame(){ return this.game; }
+
         public void run() {
             try (
                     ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
@@ -162,12 +102,7 @@ public class Server {
 
                 this.out = out;
                 socket.setTcpNoDelay(true);
-                send("CONNECTED", clientID);
-                if(numClients == 2){
-                    for(int i = 0; i < clientThreadList.size(); i++){
-                        send("start", i);
-                    }
-                }
+                send("CONNECTED", clientIndex);
 
                 while (isConnected) {
 
@@ -179,54 +114,66 @@ public class Server {
                     if (data.toString().split(" ")[0].equals("NAME:")){
                         this.screenName = data.toString().split(" ")[1];
                         namesList.add(this.screenName);
-                        send(namesList, clientID);
+                        clientThreadMap.put(screenName, this);
+                        send(namesList, clientIndex);
                     }
-                    if (data.toString().equals("disconnected")) {
-                        if(this.playerID.equals("PLAYER 1")){
-                            player1Connected = false;
-                        }
-                        else if(this.playerID.equals("PLAYER 2")){
-                            player2Connected = false;
-                        }
-                        data = data.toString() + " " + playerID;
+                    if (data.toString().split(" ")[0].equals("OPPONENT:")){
+                        String oppName = data.toString().split(" ")[1];
+                        opponent = clientThreadMap.get(oppName);
+                        send("PLAY-REQUEST: " + screenName, clientIndex);
+                    }
+                    if(data.toString().split(" ")[0].equals("ACCEPTED")){
+                        game.addPlayer(opponent);
+                        isInGame = true;
+                    }
+                    if(data.toString().split(" ")[0].equals("WAIT")){
+                        game = new Game(numGames, this);
+                        gameMap.put(game.getGameID(), this.game);
+                    }
 
-                        for (int i = clientID+1; i < clientThreadList.size(); i++) {
-                            clientThreadList.get(i).clientID--;
+                    if(data.toString().split(" ")[0].equals("PLAY-REQUEST:")){
+                        String nextPlayerName = data.toString().split(" ")[1];
+                        ConnThread nextPlayer = clientThreadMap.get(nextPlayerName);
+                        if(isInGame && opponent != nextPlayer){
+                            waitingList.add(nextPlayer);
+                            send("WAIT", nextPlayer.clientIndex);
                         }
-                        clientThreadList.remove(clientID);
-                        clientThreadMap.remove(playerID);
+                        else if(!isInGame && opponent == nextPlayer){
+                            isInGame = true;
+                            game = opponent.getGame();
+                            send("ACCEPTED", nextPlayer.clientIndex);
+                        }
+                    }
+
+
+                    if (data.toString().equals("disconnected")) {
+                        data = data.toString() + " " + screenName;
+                        for (int i = clientIndex+1; i < clientThreadList.size(); i++) {
+                            clientThreadList.get(i).clientIndex--;
+                        }
+                        clientThreadList.remove(clientIndex);
+                        clientThreadMap.remove(screenName);
                         numClients--;
-                        for (int i = 0; i < clientThreadList.size(); i++) {
-                            send("playerDisconnected", i);
+
+                        if(isInGame){
+                            game.playerDisconnected(this);
                         }
 
                         callback.accept(data);
                     }
 
                     if(data.toString().equals("quit")){
-                        if(clientID == 0){
-                            send("opponent quit", 1);
-                        }
-                        else if(clientID == 1){
-                            send("opponent quit", 0);
+                        if(isInGame) {
+                            game.playerQuit(this);
                         }
                     }
 
-                    if(numClients >=2 ) {
+                    if( game.isActive() ) {
                         if(data.toString().equals("playing again")){
-                            if(playerID.equals("PLAYER 1")){
-                                player1IsPlayingAgain = true;
-                            }else if(playerID.equals("PLAYER 2")){
-                                player2IsPlayAgain = true;
-                            }
-                            data = data.toString() + " " + playerID;
+                            isPlayingAgain = true;
+                            game.playingAgain();
+                            data = data.toString() + " " + game.getPlayerID(this);
                             callback.accept(data);
-                            if(player1IsPlayingAgain && player2IsPlayAgain){
-                                send("start", 0);
-                                send("start", 1);
-                                player2IsPlayAgain = false;
-                                player1IsPlayingAgain = false;
-                            }
                         }
 
                         if (data.toString().equals("rock") || data.toString().equals("paper") ||
@@ -234,52 +181,18 @@ public class Server {
                                 || data.toString().equals("spock")) {
                             this.played = data.toString();
                             this.hasPlayed = true;
-                        }
-                        if (clientThreadList.get(0).hasPlayed && clientThreadList.get(1).hasPlayed) {
-                            send(clientThreadList.get(0).played, 1);
-                            send(clientThreadList.get(1).played, 0);
-                            int winner = findWinner(clientThreadList.get(0).played, clientThreadList.get(1).played);
-                            if (winner == 2) {
-                                send("winner", 1);
-                                clientThreadList.get(1).points++;
-                                data = clientThreadList.get(1).playerID;
-                                send("loser", 0);
-                            } else if (winner == 1) {
-                                send("winner", 0);
-                                clientThreadList.get(0).points++;
-                                data = clientThreadList.get(0).playerID;
-                                send("loser", 1);
-                            } else {
-                                send("tie", 0);
-                                send("tie", 1);
+                            data = game.evalGame();
+                            if(data.toString().equals("WIN1") || data.toString().equals("WIN2")){
+                                callback.accept(data);
                             }
-
-                            clientThreadList.get(0).hasPlayed = false;
-                            clientThreadList.get(1).hasPlayed = false;
-                            callback.accept(data);
                         }
-                        if (clientThreadList.get(0).points == 3) {
-                            send("WIN", 0);
-                            send("LOSE", 1);
-                            data = "WIN " + clientThreadList.get(0).playerID;
-                            callback.accept(data);
-                            clientThreadList.get(0).points = 0;
-                            clientThreadList.get(1).points = 0;
-                        }
-                        if (clientThreadList.get(1).points == 3) {
-                            send("WIN", 1);
-                            send("LOSE", 0);
-                            data = "WIN" + clientThreadList.get(1).playerID;
-                            callback.accept(data);
-                            clientThreadList.get(0).points = 0;
-                            clientThreadList.get(1).points = 0;
-                        }
+//
                     }
                 }
 
 
             } catch (Exception e) {
-                callback.accept("NO CONNECTION " + clientID);
+                callback.accept("NO CONNECTION " + screenName);
             }
 
         }
