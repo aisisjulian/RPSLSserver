@@ -1,13 +1,15 @@
 package server;
 
+import server.Server.ConnThread;
+
 import java.io.Serializable;
 
 public class Game {
 
     private int ID;
     private int numPlayers;
-    private Server.ConnThread p1;
-    private Server.ConnThread p2;
+    private ConnThread p1;
+    private ConnThread p2;
     private boolean isActive;
 
     Game(int ID){
@@ -17,14 +19,14 @@ public class Game {
     }
 
 
-    Game(int ID, Server.ConnThread p1){
+    Game(int ID, ConnThread p1){
         this.ID = ID;
         this.p1 = p1;
         numPlayers = 1;
         isActive = false;
     }
 
-    Game(int ID, Server.ConnThread p1, Server.ConnThread p2){
+    Game(int ID, ConnThread p1, ConnThread p2){
         this.ID = ID;
         this.p1 = p1;
         this.p2 = p2;
@@ -32,7 +34,7 @@ public class Game {
         isActive = false;
     }
 
-    public String getPlayerID(Server.ConnThread player){
+    public String getPlayerID(ConnThread player){
         if(player == p1){
             return "PLAYER 1";
         }
@@ -43,17 +45,17 @@ public class Game {
     }
 
     public int getNumPlayers(){ return this.numPlayers; }
-    public Server.ConnThread getPlayer1(){
+    public ConnThread getPlayer1(){
         return p1;
     }
-    public Server.ConnThread getPlayer2(){
+    public ConnThread getPlayer2(){
         return p2;
     }
 
 
     public boolean isActive(){ return this.isActive; }
     public int getGameID(){ return ID; }
-    public void send(Serializable data, Server.ConnThread player){
+    public void send(Serializable data, ConnThread player){
         try {
             player.out.writeObject(data);
         }catch(Exception e){
@@ -61,7 +63,7 @@ public class Game {
         }
     }
 
-    void addPlayer(Server.ConnThread player){
+    void addPlayer(ConnThread player){
         if(numPlayers == 0){
             p1 = player;
         }
@@ -75,7 +77,7 @@ public class Game {
     }
 
 
-    void playerDisconnected(Server.ConnThread playerDisconnected){
+    void playerDisconnected(ConnThread playerDisconnected){
         if(p1 == playerDisconnected){
             p1.setConnected(false);
             send("playerDisconnected", p2);
@@ -87,7 +89,7 @@ public class Game {
         numPlayers--;
     }
 
-    void playerQuit(Server.ConnThread playerQuit){
+    void playerQuit(ConnThread playerQuit){
         if(p1 == playerQuit){
             p1.setConnected(false);
             send("opponent quit", p2);
