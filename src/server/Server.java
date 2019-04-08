@@ -76,6 +76,7 @@ public class Server {
         private ConnThread opponent;
         private Game game;
         private ArrayList<ConnThread> waitingList;
+
         ConnThread(Socket s){
             this.socket = s;
             this.clientIndex = numClients;
@@ -124,11 +125,12 @@ public class Server {
                     if (data.toString().split(" ")[0].equals("OPPONENT:")){
                         String oppName = data.toString().split(" ")[1];
                         opponent = clientThreadMap.get(oppName);
-                        send("PLAY-REQUEST: " + screenName, clientIndex);
+                        send("PLAY-REQUEST: " + screenName, opponent.clientIndex);
                     }
                     if(data.toString().split(" ")[0].equals("ACCEPTED")){
                         game.addPlayer(opponent);
                         isInGame = true;
+                        game.startGame();
                     }
                     if(data.toString().split(" ")[0].equals("WAIT")){
                         game = new Game(numGames, this);
@@ -145,6 +147,9 @@ public class Server {
                         else if(!isInGame && opponent == nextPlayer){
                             isInGame = true;
                             game = opponent.getGame();
+                            if(waitingList.size() > 0 && opponent == waitingList.get(0)){
+                                waitingList.remove(0);
+                            }
                             send("ACCEPTED", nextPlayer.clientIndex);
                         }
                     }
@@ -169,7 +174,12 @@ public class Server {
                     if(data.toString().equals("quit")){
                         if(isInGame) {
                             game.playerQuit(this);
+                            isInGame = false;
                         }
+                    }
+                    if(data.toString().equals("PlayNext")){
+                        opponent = waitingList.get(0);
+                        send("PLAY-REQUEST: " + screenName, opponent.clientIndex);
                     }
 
                     if( game.isActive() ) {
@@ -225,14 +235,6 @@ public class Server {
             isActive = false;
         }
 
-        Game(int ID, ConnThread p1, ConnThread p2){
-            this.ID = ID;
-            this.p1 = p1;
-            this.p2 = p2;
-            this.numPlayers = 2;
-            isActive = false;
-        }
-
         public String getPlayerID(ConnThread player){
             if(player == p1){
                 return "PLAYER 1";
@@ -244,16 +246,10 @@ public class Server {
         }
 
         public int getNumPlayers(){ return this.numPlayers; }
-        public ConnThread getPlayer1(){
-            return p1;
-        }
-        public ConnThread getPlayer2(){
-            return p2;
-        }
-
 
         public boolean isActive(){ return this.isActive; }
         public int getGameID(){ return ID; }
+
         public void send(Serializable data, ConnThread player){
             try {
                 player.out.writeObject(data);
@@ -270,9 +266,6 @@ public class Server {
                 p2 = player;
             }
             numPlayers++;
-            if(numPlayers == 2){
-                isActive = true;
-            }
         }
 
 
@@ -311,17 +304,12 @@ public class Server {
 
         void resetGame(){
 
-
-
         }
 
         void startGame(){
             isActive = true;
             send("start", p1);
             send("start", p2);
-
-
-
         }
 
 
@@ -346,6 +334,7 @@ public class Server {
 
                 p1.setHasPlayed(false);
                 p2.setHasPlayed(false);
+                isActive = false;
             }
             return data;
         }

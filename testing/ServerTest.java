@@ -23,25 +23,25 @@ class ServerTest {
         assertEquals( server.getPort(), 8080, "getPortTest() failed");
     }
 
-    @Test
-    public void findWinnerTest1() {
-        int winner = server.findWinner("rock", "paper");
-        assertEquals(winner, 2, "findWinnerTest() failed");
-    }
-
-    @Test
-    public void findWinnerTest2() {
-        int winner = server.findWinner("paper", "rock");
-        assertEquals(winner, 1, "findWinnerTest() failed");
-    }
-    @Test
-    public void findWinnerTest3() {
-        int winner = server.findWinner("scissors", "paper");
-        assertEquals(winner, 1, "findWinnerTest() failed");
-    }
-    @Test
-    public void findWinnerTest4() {
-        int winner = server.findWinner("scissors", "rock");
-        assertEquals(winner, 2, "findWinnerTest() failed");
-    }
+    //@Test
+//    public void findWinnerTest1() {
+//        int winner = server.findWinner("rock", "paper");
+//        assertEquals(winner, 2, "findWinnerTest() failed");
+//    }
+//
+//    @Test
+//    public void findWinnerTest2() {
+//        int winner = server.findWinner("paper", "rock");
+//        assertEquals(winner, 1, "findWinnerTest() failed");
+//    }
+//    @Test
+//    public void findWinnerTest3() {
+//        int winner = server.findWinner("scissors", "paper");
+//        assertEquals(winner, 1, "findWinnerTest() failed");
+//    }
+//    @Test
+//    public void findWinnerTest4() {
+//        int winner = server.findWinner("scissors", "rock");
+//        assertEquals(winner, 2, "findWinnerTest() failed");
+//    }
 }
