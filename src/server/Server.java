@@ -115,7 +115,9 @@ public class Server {
                         this.screenName = data.toString().split(" ")[1];
                         namesList.add(this.screenName);
                         clientThreadMap.put(screenName, this);
-                        send(namesList, clientIndex);
+                        for(int i = 0; i < clientThreadList.size(); i++){
+                            send(namesList, i);
+                        }
                     }
                     if (data.toString().split(" ")[0].equals("OPPONENT:")){
                         String oppName = data.toString().split(" ")[1];
