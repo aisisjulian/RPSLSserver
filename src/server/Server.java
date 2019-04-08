@@ -160,6 +160,7 @@ public class Server {
 
                         if(isInGame){
                             game.playerDisconnected(this);
+                            isInGame = false;
                         }
 
                         callback.accept(data);
@@ -178,7 +179,7 @@ public class Server {
                         send("PLAY-REQUEST: " + screenName, opponent.clientIndex);
                     }
 
-                    if( game.isActive() ) {
+                    if(isInGame) {
                         if(data.toString().equals("playing again")){
                             isPlayingAgain = true;
                             game.playingAgain();
