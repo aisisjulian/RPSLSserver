@@ -123,6 +123,13 @@ public class Server {
                             }
                         }
                     }
+                    if (data.toString().split(" ")[0].equals("PLAY-NEXT")){
+                        String oppName = waitingList.get(0).screenName;
+                        waitingList.remove(0);
+                        opponent = clientThreadMap.get(oppName);
+                        isInGame = true;
+                        send("ACCEPTED " + screenName, opponent.clientIndex);
+                    }
                     if (data.toString().split(" ")[0].equals("OPPONENT:")){
                         String oppName = data.toString().split(" ")[1];
                         opponent = clientThreadMap.get(oppName);
@@ -186,11 +193,6 @@ public class Server {
                             isInGame = false;
                         }
                     }
-                    if(data.toString().equals("PlayNext")){
-                        opponent = waitingList.get(0);
-                        send("PLAY-REQUEST: " + screenName, opponent.clientIndex);
-                    }
-
                     if(isInGame) {
 //                        if(data.toString().equals("playing again")){
 //                            isPlayingAgain = true;
