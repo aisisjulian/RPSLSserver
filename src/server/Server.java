@@ -15,7 +15,7 @@ public class Server {
     private ArrayList<ConnThread> clientThreadList = new ArrayList<>();
     private ArrayList<String> namesList = new ArrayList<>();
     private HashMap<String, ConnThread> clientThreadMap = new HashMap<>();
-    private HashMap<Integer, Game> gameMap = new HashMap<>();
+    private ArrayList<Game> gameList = new ArrayList<>();
     private Consumer<Serializable> callback;
 
     static int numClients = 0;
@@ -130,7 +130,7 @@ public class Server {
                     }
                     if(data.toString().split(" ")[0].equals("ACCEPTED")){
                         game = new Game(numGames, this);
-                        gameMap.put(game.getGameID(), this.game);
+                        gameList.add(this.game);
                         game.addPlayer(opponent);
                         isInGame = true;
                         opponent.setGame(game);
@@ -180,7 +180,7 @@ public class Server {
 
                     if(data.toString().equals("quit")){
                         if(isInGame) {
-                            gameMap.remove(game.getGameID());
+                            gameList.remove(this.game);
                             numGames--;
                             game.playerQuit(this);
                             isInGame = false;
@@ -192,12 +192,12 @@ public class Server {
                     }
 
                     if(isInGame) {
-                        if(data.toString().equals("playing again")){
-                            isPlayingAgain = true;
-                            game.playingAgain();
-                            data = data.toString() + " " + game.getPlayerID(this);
-                            callback.accept(data);
-                        }
+//                        if(data.toString().equals("playing again")){
+//                            isPlayingAgain = true;
+//                            game.playingAgain();
+//                            data = data.toString() + " " + game.getPlayerID(this);
+//                            callback.accept(data);
+//                        }
 
                         if (data.toString().equals("rock") || data.toString().equals("paper") ||
                                 data.toString().equals("scissors") || data.toString().equals("lizard")
@@ -206,6 +206,11 @@ public class Server {
                             this.hasPlayed = true;
                             data = game.evalGame();
                             if(data.toString().equals("WIN1") || data.toString().equals("WIN2")){
+                                gameList.remove(this.game);
+                                this.opponent.isInGame = false;
+                                this.isInGame = false;
+                                numGames--;
+                                game.resetGame();
                                 callback.accept(data);
                             }
                         }
@@ -301,16 +306,20 @@ public class Server {
             numPlayers--;
         }
 
-        void playingAgain(){
-            if(p1.isPlayingAgain() && p2.isPlayingAgain()){
-                send("start", p1);
-                send("start", p2);
-                p1.setPlayingAgain(false);
-                p2.setPlayingAgain(false);
-            }
-        }
+//        void playingAgain(){
+//            if(p1.isPlayingAgain() && p2.isPlayingAgain()){
+//                send("start", p1);
+//                send("start", p2);
+//                p1.setPlayingAgain(false);
+//                p2.setPlayingAgain(false);
+//            }
+//        }
 
         void resetGame(){
+            p1 = null;
+            p2 = null;
+            isActive = false;
+            numPlayers = 0;
 
         }
 
