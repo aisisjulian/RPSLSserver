@@ -94,7 +94,7 @@ public class Server {
         public boolean getIsInGame(){ return this.isInGame; }
         public void setIsInGame(boolean g){ this.isInGame = g; }
         public Game getGame(){ return this.game; }
-
+         public void setGame(Game g ){ this.game = g; }
         public void run() {
             try (
                     ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
@@ -133,6 +133,7 @@ public class Server {
                         gameMap.put(game.getGameID(), this.game);
                         game.addPlayer(opponent);
                         isInGame = true;
+                        opponent.setGame(game);
                         game.startGame();
                         numGames++;
                         System.out.println(screenName + " ACCEPTED RECEIVED");
@@ -147,7 +148,7 @@ public class Server {
                         }
                         else if(!isInGame && opponent == nextPlayer){
                             isInGame = true;
-                            game = opponent.getGame();
+                            //game = opponent.getGame();
                             if(waitingList.size() > 0 && opponent == waitingList.get(0)){
                                 waitingList.remove(0);
                             }
@@ -322,8 +323,8 @@ public class Server {
         Serializable evalGame(){
             Serializable data =  " ";
             if (p1.hasPlayed() && p2.hasPlayed()) {
-                send(p1.getPlayed(), p1);
-                send(p2.getPlayed(), p2);
+                send(p2.getPlayed(), p1);
+                send(p1.getPlayed(), p2);
                 int winner = findWinner(p1.getPlayed(), p2.getPlayed());
                 if (winner == 2) {
                     send("winner", p2);
@@ -340,7 +341,7 @@ public class Server {
 
                 p1.setHasPlayed(false);
                 p2.setHasPlayed(false);
-                isActive = false;
+                //isActive = false;
             }
             return data;
         }
