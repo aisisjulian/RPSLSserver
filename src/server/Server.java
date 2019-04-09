@@ -110,13 +110,17 @@ public class Server {
 
                     if (data.toString().equals("CONNECTED")) {
                         callback.accept(data);
+                        send(namesList, clientIndex);
                     }
                     if (data.toString().split(" ")[0].equals("NAME:")){
                         this.screenName = data.toString().split(" ")[1];
                         namesList.add(this.screenName);
                         clientThreadMap.put(screenName, this);
+                        String name = "name " + screenName;
                         for(int i = 0; i < clientThreadList.size(); i++){
-                            send(namesList, i);
+                            if (i != clientIndex) {
+                                send(name, i);
+                            }
                         }
                     }
                     if (data.toString().split(" ")[0].equals("OPPONENT:")){
@@ -159,6 +163,10 @@ public class Server {
                         clientThreadList.remove(clientIndex);
                         clientThreadMap.remove(screenName);
                         numClients--;
+                        namesList.remove(screenName);
+                        for(int i = 0; i < clientThreadList.size(); i++){
+                            send("remove " + screenName, i);
+                        }
 
                         if(isInGame){
                             game.playerDisconnected(this);
@@ -267,7 +275,6 @@ public class Server {
             numPlayers++;
         }
 
-
         void playerDisconnected(ConnThread playerDisconnected){
             if(p1 == playerDisconnected){
                 p1.setConnected(false);
@@ -310,7 +317,6 @@ public class Server {
             send("start", p1);
             send("start", p2);
         }
-
 
         Serializable evalGame(){
             Serializable data =  " ";
@@ -406,9 +412,5 @@ public class Server {
                 return -1;
             }
         }
-
     }
-
-
-
 }

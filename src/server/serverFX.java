@@ -21,7 +21,6 @@ import java.net.ServerSocket;
 
 /*this is aris comment*/
 //this is aris comments 4/5
-
 public class serverFX extends Application {
 
     private Server server;
@@ -232,7 +231,7 @@ public class serverFX extends Application {
    private Server createServer(int port) {
         return new Server(port, data-> {
             Platform.runLater(()->{
-                numConnected.setText(" "+ Server.numClients);
+                numConnected.setText(" " + Server.numClients);
                 System.out.println(Server.numClients);
                 if(data.toString().equals("NO CONNECTION")){
                     messages.appendText(data.toString() + "\n");
@@ -304,9 +303,4 @@ public class serverFX extends Application {
             });
         });
     }
-
-
-
-
-
 }
