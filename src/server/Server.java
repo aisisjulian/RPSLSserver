@@ -107,7 +107,7 @@ public class Server {
                 while (isConnected) {
 
                     Serializable data = (Serializable) in.readObject();
-
+                    System.out.println(data.toString());
                     if (data.toString().equals("CONNECTED")) {
                         callback.accept(data);
                         send(namesList, clientIndex);
@@ -135,6 +135,7 @@ public class Server {
                         isInGame = true;
                         game.startGame();
                         numGames++;
+                        System.out.println(screenName + " ACCEPTED RECEIVED");
                     }
 
                     if(data.toString().split(" ")[0].equals("PLAY-REQUEST:")){
