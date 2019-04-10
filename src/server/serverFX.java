@@ -19,8 +19,6 @@ import javafx.stage.Stage;
 import java.io.IOException;
 import java.net.ServerSocket;
 
-/*this is aris comment*/
-//this is aris comments 4/5
 public class serverFX extends Application {
 
     private Server server;
@@ -176,9 +174,7 @@ public class serverFX extends Application {
                 isServerOn = true;
             }
             catch(Exception e){
-
             }
-
         });
 
         serverOn.setOnAction(event -> {

@@ -102,24 +102,36 @@ public class Server {
 
                 this.out = out;
                 socket.setTcpNoDelay(true);
-                send("CONNECTED", clientIndex);
+             //   send("CONNECTED", clientIndex);
 
                 while (isConnected) {
 
                     Serializable data = (Serializable) in.readObject();
                     System.out.println(data.toString());
-                    if (data.toString().equals("CONNECTED")) {
-                        callback.accept(data);
-                        send(namesList, clientIndex);
-                    }
+                  //  if (data.toString().equals("CONNECTED")) {
+                     //   callback.accept(data);
+                    //}
                     if (data.toString().split(" ")[0].equals("NAME:")){
+                        boolean taken = false;
                         this.screenName = data.toString().split(" ")[1];
-                        namesList.add(this.screenName);
-                        clientThreadMap.put(screenName, this);
-                        String name = "name " + screenName;
-                        for(int i = 0; i < clientThreadList.size(); i++){
-                            if (i != clientIndex) {
-                                send(name, i);
+                        for(int i = 0; i < namesList.size(); i++){
+                            if(screenName.equals(namesList.get(i))){
+                                taken = true;
+                                send("TAKEN", clientIndex);
+                                break;
+                            }
+                        }
+                        if(!taken){
+                            send("CONNECTED", clientIndex);
+                            callback.accept("CONNECTED");
+                            send(namesList, clientIndex);
+                            namesList.add(this.screenName);
+                            clientThreadMap.put(screenName, this);
+                            String name = "name " + screenName;
+                            for(int i = 0; i < clientThreadList.size(); i++){
+                                if (i != clientIndex) {
+                                    send(name, i);
+                                }
                             }
                         }
                     }
@@ -163,7 +175,6 @@ public class Server {
                             send("ACCEPTED", nextPlayer.clientIndex);
                         }
                     }
-
 
                     if (data.toString().equals("disconnected")) {
                         data = data.toString() + " " + screenName;
@@ -217,10 +228,8 @@ public class Server {
                                 callback.accept(data);
                             }
                         }
-//
                     }
                 }
-
 
             } catch (Exception e) {
                 callback.accept("NO CONNECTION " + screenName);
@@ -323,7 +332,6 @@ public class Server {
             p2 = null;
             isActive = false;
             numPlayers = 0;
-
         }
 
         void startGame(){
