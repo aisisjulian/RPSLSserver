@@ -18,6 +18,8 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 public class serverFX extends Application {
 
@@ -39,29 +41,48 @@ public class serverFX extends Application {
     private Label numConnectedLabel = new Label("Clients Connected: ");
     private Label numConnected = new Label(" ~ ");
 
-    private int c1score = 0, c2score = 0;
+    private HashMap<String, clientDisplay> clientDisplayMap = new HashMap<>();
+    private ArrayList<clientDisplay> clientDisplayList = new ArrayList<>();
 
-    private Label hasWon = new Label("NO WINNER YET");
-    private Label c1 = new Label ("**** PLAYER 1 ****");
-    private Label c1Conn = new Label("NOT CONNECTED");
-    private Label c1PointsLabel = new Label("Points:");
-    private Label c1Pts = new Label(" ~ ");
-    private Label c1PlayAgainLabel = new Label("Playing Again? ");
-    private Label c1pa = new Label(" ~ ");
-    private Label c2 = new Label ("**** PLAYER 2 ****");
-    private Label c2Conn = new Label("NOT CONNECTED");
-    private Label c2PointsLabel = new Label("Points:");
-    private Label c2Pts = new Label("  ~  ");
-    private Label c2PlayAgainLabel = new Label("Playing Again? ");
-    private Label c2pa = new Label(" ~ ");
+    private VBox clientInfoBox;
+    private BorderPane serverPane;
+    private Scene startScene;
 
     public static void main(String[] args) {
         // TODO Auto-generated method stub
         launch(args);
     }
 
+    private VBox createClientInfoTable(){
+
+        Label nameHeader = new Label ("User");
+        nameHeader.setPrefSize(100, 30);
+        nameHeader.setAlignment(Pos.CENTER);
+        nameHeader.setTextAlignment(TextAlignment.CENTER);
+        Label connHeader = new Label("Connected?");
+        connHeader.setPrefSize(100, 30);
+        connHeader.setAlignment(Pos.CENTER);
+        Label oppHeader = new Label("Opponent");
+        oppHeader.setPrefSize(100, 30);
+        oppHeader.setAlignment(Pos.CENTER);
+        Label statusHeader = new Label("Status");
+        statusHeader.setPrefSize(100, 30);
+        statusHeader.setAlignment(Pos.CENTER);
+
+        HBox headers = new HBox(3, nameHeader, connHeader, oppHeader, statusHeader);
+        headers.setAlignment(Pos.CENTER);
+        this.clientInfoBox = new VBox(3, headers);
+
+        for(int i = 0; i < clientDisplayList.size(); i++){
+            clientInfoBox.getChildren().add(clientDisplayList.get(i).getClientDisplay());
+        }
+        return this.clientInfoBox;
+    }
+
+
     private Parent createStartContent() {
-        BorderPane serverPane = new BorderPane();
+        this.serverPane = new BorderPane();
+        this.serverPane.setPrefSize(600, 600);
 
         Label title = new Label("ROCK ~ PAPER ~ SCISSORS ~ LIZARD ~ SPOCK");
         Label welcome = new Label("(server)");
@@ -70,13 +91,10 @@ public class serverFX extends Application {
         title.setAlignment(Pos.CENTER);
         welcome.setAlignment(Pos.CENTER);
         status.setText("welcome :-)");
-        status.setPadding(new Insets(30));
-        status.setPrefSize(400, 100);
+        status.setPrefSize(400, 40);
         status.setTextAlignment(TextAlignment.CENTER);
         status.setWrapText(true);
         status.setAlignment(Pos.CENTER);
-        VBox heading = new VBox(5, title, welcome, status);
-        heading.setAlignment(Pos.CENTER);
 
         portInputLabel.setPrefSize(60, 30);
         inputPort.setPrefSize(100, 30);
@@ -88,13 +106,10 @@ public class serverFX extends Application {
 
         numConnected.setPrefSize(30, 40);
         numConnected.setAlignment(Pos.CENTER);
-        numConnectedLabel.setPrefSize(150, 40);
+        numConnectedLabel.setPrefSize(150, 30);
         HBox numConnBox = new HBox(numConnectedLabel, numConnected);
         numConnBox.setAlignment(Pos.CENTER);
-        hasWon.setPrefSize(150, 40);
-        hasWon.setAlignment(Pos.CENTER);
-        hasWon.setWrapText(true);
-        VBox gameInfo = new VBox(10, numConnBox, hasWon);
+        VBox gameInfo = new VBox(10, numConnBox);
         gameInfo.setAlignment(Pos.CENTER);
 
         HBox serverInput = new HBox(5, portInputLabel, inputPort);
@@ -103,59 +118,14 @@ public class serverFX extends Application {
         userOptions.setAlignment(Pos.CENTER);
         VBox centerBox = new VBox(10, serverInput, userOptions, gameInfo);
         centerBox.setAlignment(Pos.TOP_CENTER);
-        centerBox.setPadding(new Insets(30));
-        serverPane.setCenter(centerBox);
+        VBox heading = new VBox(5, title, welcome, status, centerBox);
+        heading.setAlignment(Pos.CENTER);
         serverPane.setTop(heading);
-        serverPane.setPrefSize(800, 600);
-        serverPane.setPadding(new Insets(10));
+        createClientInfoTable();
+        this.clientInfoBox.setAlignment(Pos.TOP_CENTER);
+        serverPane.setCenter(this.clientInfoBox);
 
-        c1.setPrefSize(200, 50);
-        c1.setAlignment(Pos.CENTER);
-        c1.setPadding(new Insets(10));
-        c1Conn.setPrefSize(200, 40);
-        c1Conn.setWrapText(true);
-        c1Conn.setAlignment(Pos.CENTER);
-        c1PointsLabel.setPrefSize(100, 20);
-        c1PointsLabel.setAlignment(Pos.CENTER_RIGHT);
-        c1Pts.setAlignment(Pos.CENTER_LEFT);
-        c1Pts.setPrefSize(100, 20);
-        c1Pts.setText(" " + c1score + " ");
-        HBox c1Points = new HBox(c1PointsLabel, c1Pts);
-        c1Points.setAlignment(Pos.CENTER);
-        c1PlayAgainLabel.setPrefSize(150, 20);
-        c1PlayAgainLabel.setAlignment(Pos.CENTER_RIGHT);
-        c1pa.setPrefSize(50, 20);
-        c1pa.setAlignment(Pos.CENTER_LEFT);
-        HBox c1PlayAgain = new HBox(c1PlayAgainLabel, c1pa);
-        c1PlayAgain.setAlignment(Pos.CENTER);
-        VBox client1Info = new VBox(10, c1, c1Conn, c1Points, c1PlayAgain);
-        client1Info.setAlignment(Pos.CENTER);
-        serverPane.setLeft(client1Info);
-
-
-        c2.setPrefSize(200, 50);
-        c2.setAlignment(Pos.CENTER);
-        c2.setPadding(new Insets(10));
-        c2Conn.setPrefSize(200, 40);
-        c2Conn.setWrapText(true);
-        c2Conn.setAlignment(Pos.CENTER);
-        c2PointsLabel.setPrefSize(100, 20);
-        c2PointsLabel.setAlignment(Pos.CENTER_RIGHT);
-        c2Pts.setAlignment(Pos.CENTER_LEFT);
-        c2Pts.setPrefSize(100, 20);
-        c2Pts.setText(" " + c2score + " ");
-        HBox c2Points = new HBox(c2PointsLabel, c2Pts);
-        c2Points.setAlignment(Pos.CENTER);
-        c2PlayAgainLabel.setPrefSize(150, 20);
-        c2PlayAgainLabel.setAlignment(Pos.CENTER_RIGHT);
-        c2pa.setPrefSize(50, 20);
-        c2pa.setAlignment(Pos.CENTER_LEFT);
-        HBox c2PlayAgain = new HBox(c2PlayAgainLabel, c2pa);
-        c2PlayAgain.setAlignment(Pos.CENTER);
-        VBox client2Info = new VBox(10, c2, c2Conn, c2Points, c2PlayAgain);
-        client2Info.setAlignment(Pos.CENTER);
-        serverPane.setRight(client2Info);
-        return serverPane;
+        return this.serverPane;
 
     }
 
@@ -163,7 +133,7 @@ public class serverFX extends Application {
     @Override
     public void start(Stage primaryStage){
         // TODO Auto-generated method stub
-        Scene startScene = new Scene(createStartContent());
+        this.startScene = new Scene(createStartContent());
         inputPort.setOnAction(actionEvent -> {
             try {
                 server = createServer(Integer.valueOf(inputPort.getText()));
@@ -213,7 +183,7 @@ public class serverFX extends Application {
             serverOn.setDisable(true);
         });
 
-        primaryStage.setScene(startScene);
+        primaryStage.setScene(this.startScene);
         primaryStage.show();
     }
 
@@ -232,71 +202,84 @@ public class serverFX extends Application {
                 if(data.toString().equals("NO CONNECTION")){
                     messages.appendText(data.toString() + "\n");
                 }
-                else if(data.toString().equals("CONNECTED")){
+                else if(data.toString().split(" ")[0].equals("CONNECTED")){
                     messages.appendText(data.toString() + "\n");
-                    if(Server.numClients == 1 && !player1Connected){
-                        status.setText("PLAYER 1 CONNECTED :-)");
-                        c1Conn.setText("CONNECTED");
-                        player1Connected = true;
-                    }else if(Server.numClients == 2 && player2Connected){
-                        status.setText("PLAYER 1 CONNECTED :-)");
-                        c1Conn.setText("CONNECTED");
-                        player1Connected = true;
-                    }
-                    else{
-                        status.setText("GAME STARTED");
-                        c2Conn.setText("CONNECTED");
-                        hasWon.setText("NO WINNER YET");
-                        c1pa.setText(" ~ ");
-                        c1pa.setText(" ~ ");
-                        player2Connected = true;
-                    }
+                    String playerName = data.toString().split(" ")[1];
+                    clientDisplay c = new clientDisplay(playerName);
+                    c.connectedLabel.setText("✔");
+                    clientDisplayList.add(c);
+                    clientDisplayMap.put(playerName, c);
                     numConnected.setText("" + Server.numClients);
+                    serverPane.setCenter(createClientInfoTable());
                 }
-                if(data.toString().equals("disconnected PLAYER 1")){
-                        status.setText("waiting for players to connect...");
-                        c1Conn.setText("NOT CONNECTED");
-                        player1Connected = false;
-                        c1Pts.setText(" ~ ");
-                        c1score = 0;
-                        c2Pts.setText(" ~ ");
-                        c2score = 0;
-                        hasWon.setText("NO WINNER YET");
+                if(data.toString().split(" ")[0].equals("DISCONNECTED")){
+                    messages.appendText(data.toString() + "\n");
+                    String playerName = data.toString().split(" ")[1];
+                    clientDisplayList.remove(clientDisplayMap.get(playerName));
+                    clientDisplayMap.remove(playerName);
+                    serverPane.setCenter(createClientInfoTable());
                 }
-                else if(data.toString().equals("disconnected PLAYER 2")){
-                    status.setText("waiting for players to connect...");
-                    c2Conn.setText("NOT CONNECTED");
-                    player2Connected = false;
-                    c1Pts.setText(" ~ ");
-                    c1score = 0;
-                    c2Pts.setText(" ~ ");
-                    c2score = 0;
-                    c1pa.setText(" ~ ");
-                    c1pa.setText(" ~ ");
-                    hasWon.setText("NO WINNER YET");
+                if(data.toString().split(" ")[0].equals("START")){
+                    String playerName = data.toString().split(" ")[1];
+                    String oppName = data.toString().split(" ")[2];
+                    clientDisplayMap.get(playerName).statusLabel.setText("*playing*");
+                    clientDisplayMap.get(oppName).statusLabel.setText("*playing*");
+                    serverPane.setCenter(createClientInfoTable());
                 }
-                if(data.toString().equals("PLAYER 1")){
-                    c1score++;
-                   c1Pts.setText(" " + c1score);
+                if(data.toString().split(" ")[0].equals("END")){
+                    String playerName = data.toString().split(" ")[1];
+                    String oppName = data.toString().split(" ")[2];
+                    clientDisplayMap.get(playerName).statusLabel.setText("...");
+                    clientDisplayMap.get(oppName).statusLabel.setText("...");
+                    clientDisplayMap.get(playerName).oppLabel.setText(" ~ ");
+                    clientDisplayMap.get(oppName).oppLabel.setText(" ~ ");
+                    serverPane.setCenter(createClientInfoTable());
                 }
-                if(data.toString().equals("PLAYER 2")){
-                    c2score++;
-                   c2Pts.setText(" " + c2score);
-                }
-                if(data.toString().equals("WIN1")){
-                    hasWon.setText("WINNER: PLAYER 1 !!!");
-                }
-                if(data.toString().equals("WIN2")){
-                    hasWon.setText("WINNER: PLAYER 2 !!!");
-                }
-                if(data.toString().equals("playing again PLAYER 1")){
-                    c1pa.setText("✔️");
-                }
-                if(data.toString().equals("playing again PLAYER 2")){
-                    c1pa.setText("✔️");
+                if(data.toString().split(" ")[0].equals("OPPONENT:")){
+                    String oppName = data.toString().split(" ")[1];
+                    String playerName = data.toString().split(" ")[2];
+                    clientDisplayMap.get(playerName).oppLabel.setText(oppName);
+                    serverPane.setCenter(createClientInfoTable());
                 }
                 System.out.println(data);
             });
         });
+    }
+
+    class clientDisplay {
+
+            HBox clientStats;
+            String connected, status, name, opponent;
+            Label screenNameLabel, connectedLabel, oppLabel, statusLabel;
+
+        clientDisplay(String name){
+           this.name = name;
+           this.opponent = " ~ ";
+           this.connected = " ~ ";
+           this.status = " ~ ";
+           this.opponent = " ~ ";
+           screenNameLabel = new Label(this.name);
+           screenNameLabel.setPrefSize(100, 30);
+           screenNameLabel.setAlignment(Pos.CENTER);
+           connectedLabel = new Label(connected);
+           connectedLabel.setPrefSize(100, 30);
+           connectedLabel.setAlignment(Pos.CENTER);
+           oppLabel = new Label(opponent);
+           oppLabel.setPrefSize(100, 30);
+           oppLabel.setAlignment(Pos.CENTER);
+           statusLabel = new Label(status);
+           statusLabel.setPrefSize(100, 30);
+           statusLabel.setAlignment(Pos.CENTER);
+           clientStats = new HBox(3, this.screenNameLabel, this.connectedLabel, this.oppLabel, this.statusLabel);
+           clientStats.setAlignment(Pos.CENTER);
+        }
+
+        Parent getClientDisplay(){
+            this.clientStats = new HBox(3, this.screenNameLabel, this.connectedLabel, this.oppLabel, this.statusLabel);
+            this.clientStats.setAlignment(Pos.CENTER);
+            return this.clientStats;
+        }
+
+
     }
 }

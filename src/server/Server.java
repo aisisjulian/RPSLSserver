@@ -1,5 +1,8 @@
 package server;
 
+import javafx.scene.control.Label;
+import javafx.scene.layout.HBox;
+
 import java.io.*;
 import java.lang.reflect.Array;
 import java.net.ServerSocket;
@@ -51,9 +54,12 @@ public class Server {
 
     public void closeConn() throws Exception{
         for(int i = 0; i < clientThreadList.size(); i++){
-            send("NO CONNECTION", i);
-            clientThreadList.get(i).socket.close();
+            if(clientThreadList.get(i).isConnected) {
+                send("NO CONNECTION", i);
+                clientThreadList.get(i).socket.close();
+            }
         }
+        numClients = 0;
     }
 
 
@@ -94,7 +100,8 @@ public class Server {
         public boolean getIsInGame(){ return this.isInGame; }
         public void setIsInGame(boolean g){ this.isInGame = g; }
         public Game getGame(){ return this.game; }
-         public void setGame(Game g ){ this.game = g; }
+        public void setGame(Game g ){ this.game = g; }
+
         public void run() {
             try (
                     ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
@@ -123,7 +130,7 @@ public class Server {
                         }
                         if(!taken){
                             send("CONNECTED", clientIndex);
-                            callback.accept("CONNECTED");
+                            callback.accept("CONNECTED " + screenName);
                             send(namesList, clientIndex);
                             namesList.add(this.screenName);
                             clientThreadMap.put(screenName, this);
@@ -135,7 +142,7 @@ public class Server {
                             }
                         }
                     }
-                    if (data.toString().split(" ")[0].equals("PLAY-NEXT")){
+                    if (data.toString().equals("PLAY-NEXT")){
                         if(waitingList.size() > 0 && this == waitingList.get(0).opponent){
                             String oppName = waitingList.get(0).screenName;
                             waitingList.remove(0);
@@ -148,6 +155,7 @@ public class Server {
                         String oppName = data.toString().split(" ")[1];
                         opponent = clientThreadMap.get(oppName);
                         send("PLAY-REQUEST: " + screenName, opponent.clientIndex);
+                        callback.accept(data + " " + screenName);
                     }
                     if(data.toString().split(" ")[0].equals("ACCEPTED")){
                         game = new Game(numGames, this);
@@ -158,6 +166,7 @@ public class Server {
                         game.startGame();
                         numGames++;
                         System.out.println(screenName + " ACCEPTED RECEIVED");
+                        callback.accept("START " + screenName + " " + opponent.screenName);
                     }
 
                     if(data.toString().split(" ")[0].equals("PLAY-REQUEST:")){
@@ -165,18 +174,22 @@ public class Server {
                         ConnThread nextPlayer = clientThreadMap.get(nextPlayerName);
                         if(isInGame && opponent != nextPlayer){
                             waitingList.add(nextPlayer);
+                            send("PLAYER-WAITING", this.clientIndex);
                             send("WAIT", nextPlayer.clientIndex);
                         }
                         else if(!isInGame && opponent == nextPlayer){
                             isInGame = true;
                             if(waitingList.size() > 0 && opponent == waitingList.get(0)){
                                 waitingList.remove(0);
+                                if(waitingList.size() == 0){
+                                    send("NO-PLAYERS-WAITING", this.clientIndex);
+                                }
                             }
                             send("ACCEPTED", nextPlayer.clientIndex);
                         }
                     }
 
-                    if (data.toString().equals("disconnected")) {
+                    if (data.toString().equals("DISCONNECTED")) {
                         data = data.toString() + " " + screenName;
                         for (int i = clientIndex+1; i < clientThreadList.size(); i++) {
                             clientThreadList.get(i).clientIndex--;
@@ -185,8 +198,10 @@ public class Server {
                         clientThreadMap.remove(screenName);
                         numClients--;
                         namesList.remove(screenName);
+                        isConnected = false;
                         for(int i = 0; i < clientThreadList.size(); i++){
                             send("remove " + screenName, i);
+                            send("DISCONNECTED " + screenName, i);
                         }
 
                         if(isInGame){
@@ -196,8 +211,23 @@ public class Server {
 
                         callback.accept(data);
                     }
+                    if(data.toString().split(" ")[0].equals("DISCONNECTED")){
+                        String playerName = data.toString().split(" ")[1];
+                        for(int i = 0; i < waitingList.size(); i++){
+                            if(waitingList.get(i).screenName.equals(playerName)){
+                                waitingList.remove(i);
+                                break;
+                            }
+                        }
+                        if(waitingList.size() == 0){
+                            send("NO-PLAYERS-WAITING", this.clientIndex);
+                        }
+                    }
 
                     if(data.toString().equals("quit")){
+                        if(this.opponent != null){
+                            send("OPPONENT-QUIT", this.opponent.clientIndex);
+                        }
                         if(isInGame) {
                             gameList.remove(this.game);
                             numGames--;
@@ -206,26 +236,21 @@ public class Server {
                         }
                     }
                     if(isInGame) {
-//                        if(data.toString().equals("playing again")){
-//                            isPlayingAgain = true;
-//                            game.playingAgain();
-//                            data = data.toString() + " " + game.getPlayerID(this);
-//                            callback.accept(data);
-//                        }
-
                         if (data.toString().equals("rock") || data.toString().equals("paper") ||
                                 data.toString().equals("scissors") || data.toString().equals("lizard")
                                 || data.toString().equals("spock")) {
                             this.played = data.toString();
                             this.hasPlayed = true;
                             data = game.evalGame();
-                            if(data.toString().equals("WIN1") || data.toString().equals("WIN2")){
+                            if(data.toString().equals("END")){
                                 gameList.remove(this.game);
-                                this.opponent.isInGame = false;
-                                this.isInGame = false;
                                 numGames--;
                                 game.resetGame();
-                                callback.accept(data);
+                                callback.accept("END " + screenName + " " + opponent.screenName);
+                                this.opponent.isInGame = false;
+                                this.isInGame = false;
+                                this.opponent.opponent = null;
+                                this.opponent = null;
                             }
                         }
                     }
@@ -297,11 +322,11 @@ public class Server {
         void playerDisconnected(ConnThread playerDisconnected){
             if(p1 == playerDisconnected){
                 p1.setConnected(false);
-                send("playerDisconnected", p2);
+                send("OPPONENT-DISCONNECTED", p2);
             }
             else if(p2 == playerDisconnected){
                 p2.setConnected(false);
-                send("playerDisconnected", p1);
+                send("OPPONENT-DISCONNECTED", p1);
             }
             numPlayers--;
         }
@@ -317,15 +342,6 @@ public class Server {
             }
             numPlayers--;
         }
-
-//        void playingAgain(){
-//            if(p1.isPlayingAgain() && p2.isPlayingAgain()){
-//                send("start", p1);
-//                send("start", p2);
-//                p1.setPlayingAgain(false);
-//                p2.setPlayingAgain(false);
-//            }
-//        }
 
         void resetGame(){
             p1 = null;
@@ -347,21 +363,18 @@ public class Server {
                 send(p1.getPlayed(), p2);
                 int winner = findWinner(p1.getPlayed(), p2.getPlayed());
                 if (winner == 2) {
-                    send("winner", p2);
-                    data = "WIN2";
-                    send("loser", p1);
+                    send("WIN", p2);
+                    send("LOSE", p1);
                 } else if (winner == 1) {
-                    send("winner", p1);
-                    data = "WIN1";
-                    send("loser", p2);
+                    send("WIN", p1);
+                    send("LOSE", p2);
                 } else {
-                    send("tie", p1);
-                    send("tie", p2);
+                    send("TIE", p1);
+                    send("TIE", p2);
                 }
-
+                data = "END";
                 p1.setHasPlayed(false);
                 p2.setHasPlayed(false);
-                //isActive = false;
             }
             return data;
         }
