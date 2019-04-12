@@ -227,6 +227,8 @@ public class Server {
                     if(data.toString().equals("quit")){
                         if(this.opponent != null){
                             send("OPPONENT-QUIT", this.opponent.clientIndex);
+                            this.opponent.opponent = null;
+                            this.opponent = null;
                         }
                         if(isInGame) {
                             gameList.remove(this.game);
@@ -249,8 +251,6 @@ public class Server {
                                 callback.accept("END " + screenName + " " + opponent.screenName);
                                 this.opponent.isInGame = false;
                                 this.isInGame = false;
-                                this.opponent.opponent = null;
-                                this.opponent = null;
                             }
                         }
                     }

@@ -10,9 +10,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
 
@@ -44,7 +43,7 @@ public class serverFX extends Application {
     private HashMap<String, clientDisplay> clientDisplayMap = new HashMap<>();
     private ArrayList<clientDisplay> clientDisplayList = new ArrayList<>();
 
-    private VBox clientInfoBox;
+    private VBox clientInfoBox = new VBox();
     private BorderPane serverPane;
     private Scene startScene;
 
@@ -54,27 +53,39 @@ public class serverFX extends Application {
     }
 
     private VBox createClientInfoTable(){
-
         Label nameHeader = new Label ("User");
         nameHeader.setPrefSize(100, 30);
         nameHeader.setAlignment(Pos.CENTER);
         nameHeader.setTextAlignment(TextAlignment.CENTER);
+        nameHeader.setTextFill(Color.WHITE);
         Label connHeader = new Label("Connected?");
         connHeader.setPrefSize(100, 30);
         connHeader.setAlignment(Pos.CENTER);
+        connHeader.setTextFill(Color.WHITE);
         Label oppHeader = new Label("Opponent");
         oppHeader.setPrefSize(100, 30);
         oppHeader.setAlignment(Pos.CENTER);
+        oppHeader.setTextFill(Color.WHITE);
         Label statusHeader = new Label("Status");
         statusHeader.setPrefSize(100, 30);
         statusHeader.setAlignment(Pos.CENTER);
+        statusHeader.setTextFill(Color.WHITE);
 
         HBox headers = new HBox(3, nameHeader, connHeader, oppHeader, statusHeader);
+        headers.setBackground(new Background(new BackgroundFill(Color.CADETBLUE, CornerRadii.EMPTY, Insets.EMPTY)));
         headers.setAlignment(Pos.CENTER);
-        this.clientInfoBox = new VBox(3, headers);
 
-        for(int i = 0; i < clientDisplayList.size(); i++){
+        this.clientInfoBox = new VBox(3, headers);
+        this.clientInfoBox.setBackground(new Background(new BackgroundFill(Color.HONEYDEW, CornerRadii.EMPTY, Insets.EMPTY)));
+
+        for (int i = 0; i < clientDisplayList.size(); i++) {
             clientInfoBox.getChildren().add(clientDisplayList.get(i).getClientDisplay());
+        }
+        if(Server.numClients == 0){
+            clientInfoBox.setVisible(false);
+        }
+        else{
+            clientInfoBox.setVisible(true);
         }
         return this.clientInfoBox;
     }
@@ -82,12 +93,15 @@ public class serverFX extends Application {
 
     private Parent createStartContent() {
         this.serverPane = new BorderPane();
-        this.serverPane.setPrefSize(600, 600);
+        serverPane.setBackground(new Background(new BackgroundFill(Color.DARKCYAN, CornerRadii.EMPTY, Insets.EMPTY)));
+        this.serverPane.setPrefSize(600, 400);
 
         Label title = new Label("ROCK ~ PAPER ~ SCISSORS ~ LIZARD ~ SPOCK");
+        title.setTextFill(Color.WHITE);
         Label welcome = new Label("(server)");
         title.setPrefSize(400, 30);
         welcome.setPrefSize(300, 30);
+        welcome.setTextFill(Color.WHITE);
         title.setAlignment(Pos.CENTER);
         welcome.setAlignment(Pos.CENTER);
         status.setText("welcome :-)");
@@ -95,8 +109,10 @@ public class serverFX extends Application {
         status.setTextAlignment(TextAlignment.CENTER);
         status.setWrapText(true);
         status.setAlignment(Pos.CENTER);
+        status.setTextFill(Color.WHITE);
 
         portInputLabel.setPrefSize(60, 30);
+        portInputLabel.setTextFill(Color.WHITE);
         inputPort.setPrefSize(100, 30);
         serverOn.setDisable(true);
         serverOff.setDisable(true);
@@ -107,6 +123,8 @@ public class serverFX extends Application {
         numConnected.setPrefSize(30, 40);
         numConnected.setAlignment(Pos.CENTER);
         numConnectedLabel.setPrefSize(150, 30);
+        numConnected.setTextFill(Color.WHITE);
+        numConnectedLabel.setTextFill(Color.WHITE);
         HBox numConnBox = new HBox(numConnectedLabel, numConnected);
         numConnBox.setAlignment(Pos.CENTER);
         VBox gameInfo = new VBox(10, numConnBox);
